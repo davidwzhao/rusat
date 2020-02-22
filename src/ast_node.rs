@@ -35,13 +35,12 @@ impl AstNode {
     }
 
     pub fn to_string(&self) -> String {
-        use AstNodeType::*;
-
         let mut representation: String;
 
         // get the representations of children
         let children_strings: Vec<String> = self.children.iter().map(|x| x.to_string()).collect();
 
+        use AstNodeType::*;
         match &self.entry {
             DisjunctionClause => {
                 representation = "(".to_owned() + &children_strings.join(" | ") + ")";
