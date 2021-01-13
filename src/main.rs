@@ -4,6 +4,9 @@ use ast_node::*;
 mod lexer;
 use lexer::*;
 
+mod parser;
+use parser::*;
+
 fn main() {
     let mut node = AstNode::new(AstNodeType::DisjunctionClause);
     let mut val = AstNode::new(AstNodeType::Value);
@@ -13,8 +16,16 @@ fn main() {
     let s = node.to_string();
     println!("{}", s);
 
-    let l = lex(&"(asdf& ~b)".to_string());
-    if l.is_ok() {
-        println!("{:?}", l.unwrap());
+    let l = lex(&"(asdf | ~b)".to_string());
+    match &l {
+        Ok(lexed) => println!("{:?}", lexed),
+        Err(e) => println!("{}", e),
+    }
+
+    // let p = parse(&"asdf | b".to_string());
+    let p = parse(&l.unwrap());
+    match &p {
+        Ok(parsed) => println!("{:?}", parsed),
+        Err(e) => println!("{}", e),
     }
 }

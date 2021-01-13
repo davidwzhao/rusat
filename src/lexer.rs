@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone,Debug)]
 pub enum Token {
     // (
@@ -17,6 +19,19 @@ pub enum Token {
 
     // variable id
     Variable(String),
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Token::LParen => write!(f, "("),
+            Token::RParen => write!(f, ")"),
+            Token::Conjunction => write!(f, "&"),
+            Token::Disjunction => write!(f, "|"),
+            Token::Negation => write!(f, "~"),
+            Token::Variable(s) => write!(f, "{}", s),
+        }
+    }
 }
 
 pub fn lex(input: &String) -> Result<Vec<Token>, String> {
@@ -66,6 +81,7 @@ pub fn lex(input: &String) -> Result<Vec<Token>, String> {
 
                 result.push(Variable(var));
             }
+
             ' ' | '\n' => {
                 it.next();
             }
