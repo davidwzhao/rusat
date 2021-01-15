@@ -16,7 +16,7 @@ fn main() {
     let s = node.to_string();
     println!("{}", s);
 
-    let l = lex(&"(asdf | ~b)".to_string());
+    let l = lex(&"(asdf | ~b) & (~asdf)".to_string());
     match &l {
         Ok(lexed) => println!("{:?}", lexed),
         Err(e) => println!("{}", e),

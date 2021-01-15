@@ -3,7 +3,8 @@
  * 
  * Conjunct -> ( '(' Disjunct ')' 'and' )* '(' Disjunct ')'
  * Disjunct -> ( Val 'or' )* Val
- * Val -> 'not' id | id
+ * Val -> 'not' Var | Var
+ * Var -> id
  *
  * Disjunct -> Conjunct 'or' Disjunct | Conjunct
  * Conjunct -> Val 'and' Conjunct | Val
@@ -21,7 +22,7 @@ pub fn parse(tokens: &Vec<Token>) -> Result<AstNode, String> {
     // The grammar start symbol represents a conjunction clause
     let result = parse_conjunction(&tokens, 0);
     match result {
-        Ok((tree, pos)) => Ok(tree),
+        Ok((tree, _pos)) => Ok(tree),
         Err(e) => Err(e)
     }
 }
@@ -38,16 +39,10 @@ fn parse_conjunction(tokens: &Vec<Token>, pos: usize) -> Result<(AstNode, usize)
     while position < tokens.len() {
         match tokens.get(position) {
             Some(Token::LParen) => {
+                // start a disjunction inside parentheses
                 let (disjunction_node, next_pos) = parse_disjunction(tokens, position + 1)?;
                 conjunction_node.add_child(disjunction_node);
                 position = next_pos;
-
-
-                // position += 1;
-                // println!("next_pos before: {}", next_pos);
-                // let (conjunction_node_after, next_pos_after) = parse_conjunction(tokens, next_pos)?;
-                // next_pos = next_pos_after;
-                // println!("{}", next_pos);
             }
 
             Some(Token::RParen) => {
@@ -74,10 +69,76 @@ fn parse_conjunction(tokens: &Vec<Token>, pos: usize) -> Result<(AstNode, usize)
         }
     }
 
-    Ok((conjunction_node, position))
+    Ok((conjunction_node, position + 1))
 }
 
-fn parse_disjunction(tokens: &Vec<Token>, position: usize) -> Result<(AstNode, usize), String> {
-    println!("position: {}", position);
-    Ok((AstNode::new(AstNodeType::DisjunctionClause), position + 1))
+fn parse_disjunction(tokens: &Vec<Token>, pos: usize) -> Result<(AstNode, usize), String> {
+    let mut disjunction_node = AstNode::new(AstNodeType::DisjunctionClause);
+    let mut position = pos;
+
+    while position < tokens.len() {
+        match tokens.get(position) {
+            Some(Token::Negation) | Some(Token::Variable(_)) => {
+                let (value_node, next_pos) = parse_value(tokens, position)?;
+                disjunction_node.add_child(value_node);
+                position = next_pos + 1;
+            }
+
+            Some(Token::Disjunction) => {
+                // continue to next
+                position = position + 1;
+            }
+
+            _ => {
+                return Ok((disjunction_node, position + 1));
+            }
+        }
+    }
+
+    Ok((disjunction_node, position + 1))
+}
+
+fn parse_value(tokens: &Vec<Token>, pos: usize) -> Result<(AstNode, usize), String> {
+    let mut value_node = AstNode::new(AstNodeType::Value);
+    let position;
+
+    match tokens.get(pos) {
+        Some(Token::Negation) => {
+            let mut negation_node = AstNode::new(AstNodeType::Negation);
+
+            // parse the contained variable
+            let (variable_node, next_pos) = parse_variable(tokens, pos + 1)?;
+            negation_node.add_child(variable_node);
+
+            // add to value_node
+            value_node.add_child(negation_node);
+            position = next_pos;
+        }
+
+        Some(Token::Variable(_)) => {
+            let (variable_node, next_pos) = parse_variable(tokens, pos)?;
+            value_node.add_child(variable_node);
+            position = next_pos;
+        }
+
+        _ => {
+            return Err(format!("Unexpected token: {}, in position: {}", tokens.get(pos).unwrap(), pos));
+        }
+    }
+
+    Ok((value_node, position))
+
+    // Err(format!("Unexpected token: {}, in position: {}", tokens.get(pos).unwrap(), pos))
+}
+
+fn parse_variable(tokens: &Vec<Token>, pos: usize) -> Result<(AstNode, usize), String> {
+    if pos >= tokens.len() {
+        return Err("Error: reached end of input".to_string());
+    }
+
+    if let Some(Token::Variable(var)) = tokens.get(pos) {
+        return Ok((AstNode::new(AstNodeType::Variable(var.to_string())), pos + 1));
+    }
+
+    Err(format!("Unexpected token: {}, in position: {}", tokens.get(pos).unwrap(), pos))
 }

@@ -18,15 +18,15 @@ pub enum AstNodeType {
 
 #[derive(Clone,Debug)]
 pub struct AstNode {
-    children: Vec<AstNode>,
     entry: AstNodeType,
+    children: Vec<AstNode>,
 }
 
 impl AstNode {
     pub fn new(e: AstNodeType) -> AstNode {
         AstNode {
-            children: Vec::new(),
             entry: e,
+            children: Vec::new(),
         }
     }
 
